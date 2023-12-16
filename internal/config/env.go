@@ -13,6 +13,13 @@ type EnvConfig struct {
 
 	RequestHeaderMaxSize                 int `env:"REQUEST_HEADER_MAX_SIZE" envDefault:"10000"`
 	RequestReadHeaderTimeoutMilliseconds int `env:"REQUEST_READ_HEADER_TIMEOUT_MILLISECONDS" envDefault:"2000"`
+
+	DBDriverName string `env:"DB_DRIVER_NAME" envDefault:"postgres"`
+	DBHost       string `env:"DB_HOST" envDefault:"localhost"`
+	DBPort       int    `env:"DB_PORT" envDefault:"5432"`
+	DBUsername   string `env:"DB_USERNAME" envDefault:"postgres"`
+	DBPassword   string `env:"DB_PASSWORD" envDefault:"secret"`
+	DBName       string `env:"DB_NAME" envDefault:"postgres"`
 }
 
 func GetConfigFromEnv() *EnvConfig {
