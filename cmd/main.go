@@ -4,15 +4,18 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"myfacebook/internal/apiv1/middleware"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/inbugay1/httprouter"
+	"myfacebook/internal/apiv1/handler"
 	"myfacebook/internal/config"
 	"myfacebook/internal/db"
 	"myfacebook/internal/httphandler"
 	"myfacebook/internal/httpserver"
+	sqlxrepo "myfacebook/internal/repository/sqlx"
 )
 
 func main() {
@@ -42,9 +45,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	userRepository := sqlxrepo.NewUserRepository(db)
 	router := httprouter.New()
 
+	requestResponseMiddleware := middleware.NewRequestResponseLog()
+	errorResponseMiddleware := middleware.NewErrorResponse()
+	errorLogMiddleware := middleware.NewErrorLog()
+
+	router.Use(requestResponseMiddleware, errorResponseMiddleware, errorLogMiddleware)
+
 	router.Get("/health", &httphandler.Health{})
+	router.Post("/user/register", &handler.Register{UserRepository: userRepository})
 
 	httpServer := httpserver.New(httpserver.Config{
 		Port:                          envConfig.HTTPPort,
