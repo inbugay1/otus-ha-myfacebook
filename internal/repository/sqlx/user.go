@@ -2,6 +2,8 @@ package sqlx
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"myfacebook/internal/db"
@@ -30,4 +32,22 @@ func (r *UserRepository) Add(ctx context.Context, user repository.User) error {
 	}
 
 	return nil
+}
+
+func (r *UserRepository) GetUserByID(ctx context.Context, id string) (*repository.User, error) {
+	dbConn := r.db.GetConnection()
+
+	var user repository.User
+
+	sqlQuery := `SELECT id, first_name, last_name, birthdate, city, biography, password FROM users WHERE id = $1`
+	err := dbConn.GetContext(ctx, &user, sqlQuery, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, repository.ErrNotFound
+		}
+
+		return nil, fmt.Errorf("failed to get user by id: %w", err)
+	}
+
+	return &user, nil
 }

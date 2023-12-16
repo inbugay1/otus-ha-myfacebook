@@ -8,6 +8,7 @@ import (
 const (
 	invalidRequestCode      = 100
 	internalServerErrorCode = 101
+	entityNotFoundCode      = 102
 
 	ErrorLogLevelInfo    = "info"
 	ErrorLogLevelWarning = "warning"
@@ -75,5 +76,15 @@ func NewServerError(err error) *Error {
 		code:       internalServerErrorCode,
 		err:        err,
 		logLevel:   ErrorLogLevelError,
+	}
+}
+
+func NewEntityNotFoundError(err error) *Error {
+	return &Error{
+		statusCode: http.StatusNotFound,
+		message:    "entity not found",
+		code:       entityNotFoundCode,
+		err:        err,
+		logLevel:   ErrorLogLevelInfo,
 	}
 }

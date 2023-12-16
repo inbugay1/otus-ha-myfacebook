@@ -3,11 +3,11 @@ package middleware
 import (
 	"fmt"
 	"log/slog"
-	"myfacebook/internal/apiv1"
 	"net/http"
 	"reflect"
 
 	"github.com/inbugay1/httprouter"
+	"myfacebook/internal/apiv1"
 )
 
 type errorLog struct {

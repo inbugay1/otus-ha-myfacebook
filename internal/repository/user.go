@@ -14,4 +14,5 @@ type User struct {
 
 type UserRepository interface {
 	Add(ctx context.Context, user User) error
+	GetUserByID(ctx context.Context, id string) (*User, error)
 }
