@@ -29,7 +29,9 @@ func main() {
 func run() error {
 	envConfig := config.GetConfigFromEnv()
 
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: logLevel(envConfig.LogLevel),
+	}))
 	slog.SetDefault(logger)
 
 	appDB := db.New(db.Config{
@@ -94,4 +96,19 @@ func run() error {
 	}
 
 	return nil
+}
+
+func logLevel(lvl string) slog.Level {
+	switch lvl {
+	case "debug":
+		return slog.LevelDebug
+	case "info":
+		return slog.LevelInfo
+	case "warning":
+		return slog.LevelWarn
+	case "error":
+		return slog.LevelError
+	}
+
+	return slog.LevelInfo
 }
