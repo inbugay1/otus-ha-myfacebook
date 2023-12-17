@@ -20,6 +20,7 @@ type EnvConfig struct {
 	DBUsername   string `env:"DB_USERNAME" envDefault:"postgres"`
 	DBPassword   string `env:"DB_PASSWORD" envDefault:"secret"`
 	DBName       string `env:"DB_NAME" envDefault:"postgres"`
+	DBSSLMode    string `env:"DB_SSL_MODE" envDefault:"disable"`
 }
 
 func GetConfigFromEnv() *EnvConfig {

@@ -1,0 +1,28 @@
+version: "3.7"
+services:
+  myfacebook_postgres:
+    image: postgres:12
+    container_name: myfacebook_postgres
+    restart: unless-stopped
+    ports:
+      - "54322:5432"
+    volumes:
+      - ./storage/pgdata:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+
+  myfacebook:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    depends_on:
+      - myfacebook_postgres
+    restart: on-failure
+    environment:
+      - DB_HOST=myfacebook_postgres
+    ports:
+      - ${HTTP_EXT_PORT}:${HTTP_INT_PORT}
+    env_file:
+      - ./.env

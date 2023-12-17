@@ -41,6 +41,7 @@ func run() error {
 		User:          envConfig.DBUsername,
 		Password:      envConfig.DBPassword,
 		DBName:        envConfig.DBName,
+		SSLMode:       envConfig.DBSSLMode,
 		MigrationPath: "./storage/migrations",
 	})
 
