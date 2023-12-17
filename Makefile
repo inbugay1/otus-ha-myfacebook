@@ -1,8 +1,5 @@
 .PHONY: build
 
-env:
-	cp .env.example .env
-
 build:
 	docker compose build
 
