@@ -19,12 +19,20 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		slog.Error(fmt.Sprintf("Application error: %s", err))
+
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	envConfig := config.GetConfigFromEnv()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
-	db := db.New(db.Config{
+	appDB := db.New(db.Config{
 		DriverName:    envConfig.DBDriverName,
 		Host:          envConfig.DBHost,
 		Port:          envConfig.DBPort,
@@ -34,18 +42,22 @@ func main() {
 		MigrationPath: "./storage/migrations",
 	})
 
-	if err := db.Connect(context.Background()); err != nil {
-		slog.Error(fmt.Sprintf("cannot connect to db: %s", err))
-		os.Exit(1)
-	}
-	defer db.Disconnect()
-
-	if err := db.Migrate(); err != nil {
-		slog.Error(fmt.Sprintf("db migration failed: %s", err))
-		os.Exit(1)
+	if err := appDB.Connect(context.Background()); err != nil {
+		return fmt.Errorf("cannot connect to appDB: %w", err)
 	}
 
-	userRepository := sqlxrepo.NewUserRepository(db)
+	defer func() {
+		if err := appDB.Disconnect(); err != nil {
+			slog.Error(fmt.Sprintf("Failed to disconnect from app db: %s", err))
+		}
+	}()
+
+	if err := appDB.Migrate(); err != nil {
+		return fmt.Errorf("appDB migration failed: %w", err)
+	}
+
+	userRepository := sqlxrepo.NewUserRepository(appDB)
+
 	router := httprouter.New(httprouter.NewRegexRouteFactory())
 
 	requestResponseMiddleware := middleware.NewRequestResponseLog()
@@ -58,6 +70,9 @@ func main() {
 	router.Post("/user/register", &handler.Register{UserRepository: userRepository})
 	router.Get(`/user/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`,
 		&handler.GetUser{UserRepository: userRepository})
+	router.Post("/login", &handler.Login{
+		UserRepository: userRepository,
+	})
 
 	httpServer := httpserver.New(httpserver.Config{
 		Port:                          envConfig.HTTPPort,
@@ -65,11 +80,18 @@ func main() {
 		ReadHeaderTimeoutMilliseconds: envConfig.RequestReadHeaderTimeoutMilliseconds,
 	}, router)
 
-	httpServer.Start()
+	httpServerErrCh := httpServer.Start()
 	defer httpServer.Shutdown()
 
 	osSignals := make(chan os.Signal, 1)
 	signal.Notify(osSignals, os.Interrupt, syscall.SIGTERM)
 
-	slog.Info("got signal from OS: %v. Exit...", <-osSignals)
+	select {
+	case osSignal := <-osSignals:
+		slog.Info(fmt.Sprintf("got signal from OS: %v. Exit...", osSignal))
+	case err := <-httpServerErrCh:
+		return fmt.Errorf("http server error: %w", err)
+	}
+
+	return nil
 }

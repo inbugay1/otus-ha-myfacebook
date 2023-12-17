@@ -20,6 +20,7 @@ const RequestResponseLogFormat = "%d [%s] %s: Request Time: %s Response Time: %s
 
 func (m *requestResponseLog) Handle(responseWriter http.ResponseWriter, request *http.Request) error {
 	requestDateTime := time.Now()
+
 	requestBody, err := io.ReadAll(request.Body)
 	if err != nil {
 		return fmt.Errorf("middleware, requestResponseLog.Handle, io.ReadAll, err: %w", err)
@@ -63,6 +64,7 @@ func (m *requestResponseLog) Handle(responseWriter http.ResponseWriter, request 
 	for k, v := range resultRecorder.Header {
 		responseWriter.Header()[k] = v
 	}
+
 	responseWriter.WriteHeader(resultRecorder.StatusCode)
 
 	_, err = responseWriterRecorder.Body.WriteTo(responseWriter)

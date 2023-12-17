@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -34,15 +33,21 @@ func New(config Config, handler http.Handler) *Server {
 	}
 }
 
-func (s *Server) Start() {
+func (s *Server) Start() <-chan error {
 	slog.Info(fmt.Sprintf("Starting HTTP server on %s", s.httpServer.Addr))
 
+	errCh := make(chan error)
+
 	go func() {
-		if err := s.httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		err := s.httpServer.ListenAndServe()
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("HTTP server ListenAndServe error: %s", err)
-			os.Exit(1)
+
+			errCh <- fmt.Errorf("http listen and server error: %w", err)
 		}
 	}()
+
+	return errCh
 }
 
 func (s *Server) Shutdown() {

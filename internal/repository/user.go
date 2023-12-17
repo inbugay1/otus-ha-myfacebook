@@ -10,9 +10,11 @@ type User struct {
 	Biography string `db:"biography"`
 	City      string `db:"city"`
 	Password  string `db:"password"`
+	Token     string `db:"token"`
 }
 
 type UserRepository interface {
 	Add(ctx context.Context, user User) error
-	GetUserByID(ctx context.Context, id string) (*User, error)
+	GetUserByID(ctx context.Context, userID string) (*User, error)
+	UpdateUserToken(ctx context.Context, userID, token string) error
 }

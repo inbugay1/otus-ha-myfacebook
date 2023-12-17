@@ -34,13 +34,14 @@ func (r *UserRepository) Add(ctx context.Context, user repository.User) error {
 	return nil
 }
 
-func (r *UserRepository) GetUserByID(ctx context.Context, id string) (*repository.User, error) {
+func (r *UserRepository) GetUserByID(ctx context.Context, userID string) (*repository.User, error) {
 	dbConn := r.db.GetConnection()
 
 	var user repository.User
 
-	sqlQuery := `SELECT id, first_name, last_name, birthdate, city, biography, password FROM users WHERE id = $1`
-	err := dbConn.GetContext(ctx, &user, sqlQuery, id)
+	sqlQuery := `SELECT id, first_name, last_name, birthdate, city, biography, password, token FROM users WHERE id = $1`
+
+	err := dbConn.GetContext(ctx, &user, sqlQuery, userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, repository.ErrNotFound
@@ -50,4 +51,17 @@ func (r *UserRepository) GetUserByID(ctx context.Context, id string) (*repositor
 	}
 
 	return &user, nil
+}
+
+func (r *UserRepository) UpdateUserToken(ctx context.Context, userID, token string) error {
+	dbConn := r.db.GetConnection()
+
+	sqlQuery := `UPDATE users SET token=$2 WHERE id=$1`
+
+	_, err := dbConn.ExecContext(ctx, sqlQuery, userID, token)
+	if err != nil {
+		return fmt.Errorf("failed to update user token in db: %w", err)
+	}
+
+	return nil
 }
