@@ -23,7 +23,7 @@ func NewUserRepository(db *db.DB) *UserRepository {
 func (r *UserRepository) Add(ctx context.Context, user repository.User) error {
 	dbConn := r.db.GetConnection()
 
-	sqlQuery := `INSERT INTO users (id, first_name, last_name, birthdate, biography, city, password) 
+	sqlQuery := `INSERT INTO users (id, first_name, last_name, TO_CHAR(birthdate, 'YYYY-MM-DD') as birthdate, biography, city, password) 
 				VALUES (:id, :first_name, :last_name, :birthdate, :biography, :city, :password)`
 
 	_, err := dbConn.NamedExecContext(ctx, sqlQuery, user)
@@ -39,7 +39,7 @@ func (r *UserRepository) GetUserByID(ctx context.Context, userID string) (*repos
 
 	var user repository.User
 
-	sqlQuery := `SELECT id, first_name, last_name, birthdate, city, biography, password, token FROM users WHERE id = $1`
+	sqlQuery := `SELECT id, first_name, last_name, TO_CHAR(birthdate, 'YYYY-MM-DD') as birthdate, city, biography, password, token FROM users WHERE id = $1`
 
 	err := dbConn.GetContext(ctx, &user, sqlQuery, userID)
 	if err != nil {
@@ -51,6 +51,26 @@ func (r *UserRepository) GetUserByID(ctx context.Context, userID string) (*repos
 	}
 
 	return &user, nil
+}
+
+func (r *UserRepository) GetUsersByFirstnameAndLastname(ctx context.Context, firstName, lastName string) ([]repository.User, error) {
+	dbConn := r.db.GetConnection()
+
+	var users []repository.User
+
+	sqlQuery := `SELECT id, first_name, last_name, TO_CHAR(birthdate, 'YYYY-MM-DD') as birthdate, city, biography, password, token 
+		FROM users WHERE first_name LIKE $1 AND last_name LIKE $2 ORDER BY id`
+
+	err := dbConn.SelectContext(ctx, &users, sqlQuery, firstName+"%", lastName+"%")
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, repository.ErrNotFound
+		}
+
+		return nil, fmt.Errorf("failed to find users by firstname and lastname: %w", err)
+	}
+
+	return users, nil
 }
 
 func (r *UserRepository) UpdateUserToken(ctx context.Context, userID, token string) error {

@@ -35,14 +35,15 @@ func run() error {
 	slog.SetDefault(logger)
 
 	appDB := db.New(db.Config{
-		DriverName:    envConfig.DBDriverName,
-		Host:          envConfig.DBHost,
-		Port:          envConfig.DBPort,
-		User:          envConfig.DBUsername,
-		Password:      envConfig.DBPassword,
-		DBName:        envConfig.DBName,
-		SSLMode:       envConfig.DBSSLMode,
-		MigrationPath: "./storage/migrations",
+		DriverName:         envConfig.DBDriverName,
+		Host:               envConfig.DBHost,
+		Port:               envConfig.DBPort,
+		User:               envConfig.DBUsername,
+		Password:           envConfig.DBPassword,
+		DBName:             envConfig.DBName,
+		SSLMode:            envConfig.DBSSLMode,
+		MaxOpenConnections: envConfig.DBMaxOpenConnections,
+		MigrationPath:      "./storage/migrations",
 	})
 
 	if err := appDB.Connect(context.Background()); err != nil {
@@ -74,6 +75,9 @@ func run() error {
 	router.Get(`/user/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`,
 		&handler.GetUser{UserRepository: userRepository})
 	router.Post("/login", &handler.Login{
+		UserRepository: userRepository,
+	})
+	router.Get("/user/search", &handler.SearchUser{
 		UserRepository: userRepository,
 	})
 

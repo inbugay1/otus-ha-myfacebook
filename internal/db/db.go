@@ -14,14 +14,15 @@ import (
 )
 
 type Config struct {
-	DriverName    string
-	Host          string
-	Port          int
-	User          string
-	Password      string
-	DBName        string
-	SSLMode       string
-	MigrationPath string
+	DriverName         string
+	Host               string
+	Port               int
+	User               string
+	Password           string
+	DBName             string
+	SSLMode            string
+	MigrationPath      string
+	MaxOpenConnections int
 }
 
 type DB struct {
@@ -43,6 +44,8 @@ func (db *DB) Connect(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to connect to database %q on %s:%d: %w", db.config.DBName, db.config.Host, db.config.Port, err)
 	}
+
+	conn.SetMaxOpenConns(db.config.MaxOpenConnections)
 
 	if err := conn.PingContext(ctx); err != nil {
 		return fmt.Errorf("failed to ping postgres on %s:%d: %w", db.config.Host, db.config.Port, err)
