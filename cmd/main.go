@@ -67,6 +67,7 @@ func run() error {
 	requestResponseMiddleware := middleware.NewRequestResponseLog()
 	errorResponseMiddleware := middleware.NewErrorResponse()
 	errorLogMiddleware := middleware.NewErrorLog()
+	authMiddleware := middleware.NewAuth(userRepository)
 
 	router.Use(requestResponseMiddleware, errorResponseMiddleware, errorLogMiddleware)
 
@@ -79,6 +80,18 @@ func run() error {
 	})
 	router.Get("/user/search", &handler.SearchUser{
 		UserRepository: userRepository,
+	})
+
+	router.Group(func(r httprouter.Router) {
+		r.Use(authMiddleware)
+
+		r.Put(`/friend/set/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`, &handler.SetFriend{
+			UserRepository: userRepository,
+		})
+
+		r.Put(`/friend/delete/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`, &handler.DeleteFriend{
+			UserRepository: userRepository,
+		})
 	})
 
 	httpServer := httpserver.New(httpserver.Config{

@@ -10,6 +10,7 @@ const (
 	internalServerErrorCode = 101
 	entityNotFoundCode      = 102
 	invalidCredentialsCode  = 103
+	invalidTokenCode        = 104
 
 	ErrorLogLevelInfo    = "info"
 	ErrorLogLevelWarning = "warning"
@@ -95,6 +96,16 @@ func NewInvalidCredentialsError() *Error {
 		statusCode: http.StatusBadRequest,
 		message:    "invalid credentials",
 		code:       invalidCredentialsCode,
+		logLevel:   ErrorLogLevelInfo,
+	}
+}
+
+func NewInvalidTokenError(text string, err error) *Error {
+	return &Error{
+		statusCode: http.StatusUnauthorized,
+		message:    text,
+		code:       invalidTokenCode,
+		err:        err,
 		logLevel:   ErrorLogLevelInfo,
 	}
 }
