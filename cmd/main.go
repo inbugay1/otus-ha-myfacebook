@@ -82,14 +82,14 @@ func run() error {
 		UserRepository: userRepository,
 	})
 
-	router.Group(func(r httprouter.Router) {
-		r.Use(authMiddleware)
+	router.Group(func(router httprouter.Router) {
+		router.Use(authMiddleware)
 
-		r.Put(`/friend/set/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`, &handler.SetFriend{
+		router.Put(`/friend/set/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`, &handler.SetFriend{
 			UserRepository: userRepository,
 		})
 
-		r.Put(`/friend/delete/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`, &handler.DeleteFriend{
+		router.Put(`/friend/delete/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`, &handler.DeleteFriend{
 			UserRepository: userRepository,
 		})
 	})
