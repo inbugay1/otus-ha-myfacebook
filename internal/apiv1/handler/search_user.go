@@ -62,6 +62,9 @@ func (h *SearchUser) Handle(responseWriter http.ResponseWriter, request *http.Re
 		})
 	}
 
+	responseWriter.Header().Set("Content-Type", "application/json; utf-8")
+	responseWriter.WriteHeader(http.StatusOK)
+
 	err = json.NewEncoder(responseWriter).Encode(&searchUserResponse)
 	if err != nil {
 		return apiv1.NewServerError(fmt.Errorf("search user handler, cannot encode response: %w", err))

@@ -61,6 +61,7 @@ func run() error {
 	}
 
 	userRepository := sqlxrepo.NewUserRepository(appDB)
+	dialogRepository := sqlxrepo.NewDialogRepository(appDB)
 
 	router := httprouter.New(httprouter.NewRegexRouteFactory())
 
@@ -91,6 +92,14 @@ func run() error {
 
 		router.Put(`/friend/delete/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`, &handler.DeleteFriend{
 			UserRepository: userRepository,
+		})
+
+		router.Post(`/dialog/{user_id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}/send`, &handler.SendDialog{
+			DialogRepository: dialogRepository,
+		})
+
+		router.Get(`/dialog/{user_id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}/list`, &handler.ListDialog{
+			DialogRepository: dialogRepository,
 		})
 	})
 
