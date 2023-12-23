@@ -82,6 +82,8 @@ func run() error {
 	router.Get("/user/search", &handler.SearchUser{
 		UserRepository: userRepository,
 	})
+	router.Get(`/user/findByToken/{token:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`,
+		&handler.FindUserByToken{UserRepository: userRepository})
 
 	router.Group(func(router httprouter.Router) {
 		router.Use(authMiddleware)
