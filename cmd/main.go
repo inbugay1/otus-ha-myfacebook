@@ -9,12 +9,19 @@ import (
 	"syscall"
 
 	"github.com/inbugay1/httprouter"
+	"myfacebook/internal/apiclient"
 	"myfacebook/internal/apiv1/handler"
-	"myfacebook/internal/apiv1/middleware"
+	apiv1middleware "myfacebook/internal/apiv1/middleware"
 	"myfacebook/internal/config"
 	"myfacebook/internal/db"
+	"myfacebook/internal/dialogapiclient"
+	"myfacebook/internal/httpclient"
 	"myfacebook/internal/httphandler"
+	httproutermiddleware "myfacebook/internal/httprouter/middleware"
 	"myfacebook/internal/httpserver"
+	internalapihandler "myfacebook/internal/internalapi/handler"
+	internalapimiddleware "myfacebook/internal/internalapi/middleware"
+	"myfacebook/internal/repository/rest"
 	sqlxrepo "myfacebook/internal/repository/sqlx"
 )
 
@@ -60,49 +67,73 @@ func run() error {
 		return fmt.Errorf("appDB migration failed: %w", err)
 	}
 
+	httpClient := httpclient.New(&httpclient.Config{
+		InsecureSkipVerify: true,
+	})
+	apiClient := apiclient.New(envConfig.DialogAPIBaseURL, httpClient)
+	dialogAPIClient := dialogapiclient.New(apiClient)
+
 	userRepository := sqlxrepo.NewUserRepository(appDB)
-	dialogRepository := sqlxrepo.NewDialogRepository(appDB)
+	sqlxDialogRepository := sqlxrepo.NewDialogRepository(appDB)
+	restDialogRepository := rest.NewDialogRepository(dialogAPIClient)
 
 	router := httprouter.New(httprouter.NewRegexRouteFactory())
 
-	requestResponseMiddleware := middleware.NewRequestResponseLog()
-	errorResponseMiddleware := middleware.NewErrorResponse()
-	errorLogMiddleware := middleware.NewErrorLog()
-	authMiddleware := middleware.NewAuth(userRepository)
+	requestResponseMiddleware := httproutermiddleware.NewRequestResponseLog()
 
-	router.Use(requestResponseMiddleware, errorResponseMiddleware, errorLogMiddleware)
+	apiv1ErrorResponseMiddleware := apiv1middleware.NewErrorResponse()
+	apiv1ErrorLogMiddleware := apiv1middleware.NewErrorLog()
+	apiv1AuthMiddleware := apiv1middleware.NewAuth(userRepository)
+
+	router.Use(requestResponseMiddleware)
 
 	router.Get("/health", &httphandler.Health{})
-	router.Post("/user/register", &handler.Register{UserRepository: userRepository})
-	router.Get(`/user/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`,
-		&handler.GetUser{UserRepository: userRepository})
-	router.Post("/login", &handler.Login{
-		UserRepository: userRepository,
-	})
-	router.Get("/user/search", &handler.SearchUser{
-		UserRepository: userRepository,
-	})
-	router.Get(`/user/findByToken/{token:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`,
-		&handler.FindUserByToken{UserRepository: userRepository})
 
 	router.Group(func(router httprouter.Router) {
-		router.Use(authMiddleware)
+		router.Use(apiv1ErrorResponseMiddleware, apiv1ErrorLogMiddleware)
 
-		router.Put(`/friend/set/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`, &handler.SetFriend{
+		router.Post("/user/register", &handler.Register{UserRepository: userRepository})
+		router.Get(`/user/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`,
+			&handler.GetUser{UserRepository: userRepository})
+		router.Post("/login", &handler.Login{
 			UserRepository: userRepository,
 		})
-
-		router.Put(`/friend/delete/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`, &handler.DeleteFriend{
+		router.Get("/user/search", &handler.SearchUser{
 			UserRepository: userRepository,
 		})
+		router.Get(`/user/findByToken/{token:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`,
+			&handler.FindUserByToken{UserRepository: userRepository})
 
-		router.Post(`/dialog/{user_id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}/send`, &handler.SendDialog{
-			DialogRepository: dialogRepository,
-		})
+		router.Group(func(router httprouter.Router) {
+			router.Use(apiv1AuthMiddleware)
 
-		router.Get(`/dialog/{user_id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}/list`, &handler.ListDialog{
-			DialogRepository: dialogRepository,
+			router.Put(`/friend/set/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`, &handler.SetFriend{
+				UserRepository: userRepository,
+			})
+
+			router.Put(`/friend/delete/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`, &handler.DeleteFriend{
+				UserRepository: userRepository,
+			})
+
+			router.Post(`/dialog/{user_id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}/send`, &handler.SendDialog{
+				SqlxDialogRepository: sqlxDialogRepository,
+				RestDialogRepository: restDialogRepository,
+			})
+
+			router.Get(`/dialog/{user_id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}/list`, &handler.ListDialog{
+				DialogRepository: restDialogRepository,
+			})
 		})
+	})
+
+	internalAPIErrorResponseMiddleware := internalapimiddleware.NewErrorResponse()
+	internalAPIErrorLogMiddleware := internalapimiddleware.NewErrorLog()
+
+	router.Group(func(router httprouter.Router) {
+		router.Use(internalAPIErrorResponseMiddleware, internalAPIErrorLogMiddleware)
+
+		router.Get(`/int/user/findByToken/{token:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`,
+			&internalapihandler.FindUserByToken{UserRepository: userRepository})
 	})
 
 	httpServer := httpserver.New(httpserver.Config{

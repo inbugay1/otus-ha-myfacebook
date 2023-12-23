@@ -8,10 +8,13 @@ import (
 	"github.com/inbugay1/httprouter"
 	"myfacebook/internal/apiv1"
 	"myfacebook/internal/repository"
+	"myfacebook/internal/repository/rest"
+	sqlxrepo "myfacebook/internal/repository/sqlx"
 )
 
 type SendDialog struct {
-	DialogRepository repository.DialogRepository
+	SqlxDialogRepository *sqlxrepo.DialogRepository
+	RestDialogRepository *rest.DialogRepository
 }
 
 type sendDialogRequest struct {
@@ -21,7 +24,7 @@ type sendDialogRequest struct {
 func (h *SendDialog) Handle(responseWriter http.ResponseWriter, request *http.Request) error {
 	var sendDialogReq sendDialogRequest
 	if err := json.NewDecoder(request.Body).Decode(&sendDialogReq); err != nil {
-		return apiv1.NewServerError(fmt.Errorf("send dialogMessage handler, cannot decode request body: %w", err))
+		return apiv1.NewServerError(fmt.Errorf("send dialogMessage handler cannot decode request body: %w", err))
 	}
 
 	defer request.Body.Close()
@@ -35,15 +38,20 @@ func (h *SendDialog) Handle(responseWriter http.ResponseWriter, request *http.Re
 	senderID := ctx.Value("user_id").(string)
 	receiverID := httprouter.RouteParam(ctx, "user_id")
 
-	dialogMessage := repository.DialogMessage{
+	dialogMsg := repository.DialogMessage{
 		From: senderID,
 		To:   receiverID,
 		Text: sendDialogReq.Text,
 	}
 
-	err := h.DialogRepository.Add(ctx, dialogMessage)
+	err := h.RestDialogRepository.Add(ctx, dialogMsg)
 	if err != nil {
-		return apiv1.NewServerError(fmt.Errorf("send dialog handler, failed to add dialog message to repository: %w", err))
+		return apiv1.NewServerError(fmt.Errorf("send dialog handler failed to add dialog message to rest repository: %w", err))
+	}
+
+	err = h.SqlxDialogRepository.Add(ctx, dialogMsg)
+	if err != nil {
+		return apiv1.NewServerError(fmt.Errorf("send dialog handler failed to add dialog message to sqlx repository: %w", err))
 	}
 
 	responseWriter.Header().Set("Content-Type", "application/json; utf-8")

@@ -22,6 +22,8 @@ type EnvConfig struct {
 	DBName               string `env:"DB_NAME" envDefault:"postgres"`
 	DBSSLMode            string `env:"DB_SSL_MODE" envDefault:"disable"`
 	DBMaxOpenConnections int    `env:"DB_MAX_OPEN_CONNECTIONS" envDefault:"10"`
+
+	DialogAPIBaseURL string `env:"DIALOG_API_BASE_URL" envDefault:"http://localhost:9091"`
 }
 
 func GetConfigFromEnv() *EnvConfig {
