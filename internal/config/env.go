@@ -7,9 +7,10 @@ import (
 )
 
 type EnvConfig struct {
-	Version  string `env:"VERSION" envDefault:"version_not_set"`
-	LogLevel string `env:"LOG_LEVEL" envDefault:"info"`
-	HTTPPort string `env:"HTTP_INT_PORT" envDefault:"9090"`
+	Version     string `env:"VERSION" envDefault:"version_not_set"`
+	ServiceName string `env:"SERVICE_NAME" envDefault:"myfacebook"`
+	LogLevel    string `env:"LOG_LEVEL" envDefault:"info"`
+	HTTPPort    string `env:"HTTP_INT_PORT" envDefault:"9090"`
 
 	RequestHeaderMaxSize                 int `env:"REQUEST_HEADER_MAX_SIZE" envDefault:"10000"`
 	RequestReadHeaderTimeoutMilliseconds int `env:"REQUEST_READ_HEADER_TIMEOUT_MILLISECONDS" envDefault:"2000"`
@@ -24,6 +25,9 @@ type EnvConfig struct {
 	DBMaxOpenConnections int    `env:"DB_MAX_OPEN_CONNECTIONS" envDefault:"10"`
 
 	DialogAPIBaseURL string `env:"DIALOG_API_BASE_URL" envDefault:"http://localhost:9091"`
+
+	OTelExporterType         string `env:"OTEL_EXPORTER_TYPE" envDefault:"stdout"`
+	OTelExporterOTLPEndpoint string `env:"OTEL_EXPORTER_OTLP_ENDPOINT" envDefault:"localhost:4318"`
 }
 
 func GetConfigFromEnv() *EnvConfig {

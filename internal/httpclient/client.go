@@ -4,6 +4,8 @@ import (
 	"crypto/tls"
 	"net/http"
 	"time"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type Config struct {
@@ -19,7 +21,7 @@ func New(config *Config) *http.Client {
 	}
 
 	return &http.Client{
-		Transport: httpTransport,
+		Transport: otelhttp.NewTransport(httpTransport),
 		Timeout:   time.Second * 30,
 	}
 }
