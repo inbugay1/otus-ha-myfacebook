@@ -24,7 +24,7 @@ type EnvConfig struct {
 	DBSSLMode            string `env:"DB_SSL_MODE" envDefault:"disable"`
 	DBMaxOpenConnections int    `env:"DB_MAX_OPEN_CONNECTIONS" envDefault:"10"`
 
-	DialogAPIBaseURL string `env:"DIALOG_API_BASE_URL" envDefault:"http://localhost:9091"`
+	MyfacebookDialogAPIBaseURL string `env:"MYFACEBOOK_DIALOG_API_BASE_URL" envDefault:"http://localhost:9091"`
 
 	OTelExporterType         string `env:"OTEL_EXPORTER_TYPE" envDefault:"stdout"`
 	OTelExporterOTLPEndpoint string `env:"OTEL_EXPORTER_OTLP_ENDPOINT" envDefault:"localhost:4318"`

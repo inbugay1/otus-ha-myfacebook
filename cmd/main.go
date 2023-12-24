@@ -90,7 +90,7 @@ func run() error {
 	httpClient := httpclient.New(&httpclient.Config{
 		InsecureSkipVerify: true,
 	})
-	apiClient := apiclient.New(envConfig.DialogAPIBaseURL, httpClient)
+	apiClient := apiclient.New(envConfig.MyfacebookDialogAPIBaseURL, httpClient)
 	dialogAPIClient := dialogapiclient.New(apiClient)
 
 	userRepository := sqlxrepo.NewUserRepository(appDB)
