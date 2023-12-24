@@ -1,4 +1,4 @@
-package dialogapiclient
+package myfacebookdialogapiclient
 
 import "errors"
 

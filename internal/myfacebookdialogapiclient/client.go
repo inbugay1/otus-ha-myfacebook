@@ -1,4 +1,4 @@
-package dialogapiclient
+package myfacebookdialogapiclient
 
 import (
 	"context"
@@ -34,7 +34,7 @@ func (c *Client) SendDialogMessage(ctx context.Context, senderID, receiverID, me
 		"text": message,
 	})
 	if err != nil {
-		return fmt.Errorf("dialogapiclient failed to send dialog message: %w", err)
+		return fmt.Errorf("myfacebookdialogapiclient failed to send dialog message: %w", err)
 	}
 
 	defer response.Body.Close()
@@ -49,7 +49,7 @@ func (c *Client) SendDialogMessage(ctx context.Context, senderID, receiverID, me
 func (c *Client) GetDialogMessages(ctx context.Context, senderID, receiverID string) ([]DialogMessage, error) {
 	response, err := c.apiClient.Get(ctx, fmt.Sprintf("%s?from=%s&to=%s", endpointGetDialogMessages, senderID, receiverID))
 	if err != nil {
-		return nil, fmt.Errorf("dialogapiclient failed to get dialog messages: %w", err)
+		return nil, fmt.Errorf("myfacebookdialogapiclient failed to get dialog messages: %w", err)
 	}
 
 	defer response.Body.Close()
@@ -59,7 +59,7 @@ func (c *Client) GetDialogMessages(ctx context.Context, senderID, receiverID str
 
 		err = json.NewDecoder(response.Body).Decode(&dialogMessages)
 		if err != nil {
-			return nil, fmt.Errorf("dialogapiclient failed to decode api client response: %w", err)
+			return nil, fmt.Errorf("myfacebookdialogapiclient failed to decode api client response: %w", err)
 		}
 
 		return dialogMessages, nil

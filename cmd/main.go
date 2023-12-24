@@ -23,14 +23,13 @@ import (
 	apiv1middleware "myfacebook/internal/apiv1/middleware"
 	"myfacebook/internal/config"
 	"myfacebook/internal/db"
-	"myfacebook/internal/dialogapiclient"
 	"myfacebook/internal/httpclient"
 	"myfacebook/internal/httphandler"
 	httproutermiddleware "myfacebook/internal/httprouter/middleware"
 	"myfacebook/internal/httpserver"
 	internalapihandler "myfacebook/internal/internalapi/handler"
 	internalapimiddleware "myfacebook/internal/internalapi/middleware"
-	"myfacebook/internal/repository/rest"
+	"myfacebook/internal/myfacebookdialogapiclient"
 	sqlxrepo "myfacebook/internal/repository/sqlx"
 )
 
@@ -91,11 +90,10 @@ func run() error {
 		InsecureSkipVerify: true,
 	})
 	apiClient := apiclient.New(envConfig.MyfacebookDialogAPIBaseURL, httpClient)
-	dialogAPIClient := dialogapiclient.New(apiClient)
+	dialogAPIClient := myfacebookdialogapiclient.New(apiClient)
 
 	userRepository := sqlxrepo.NewUserRepository(appDB)
-	sqlxDialogRepository := sqlxrepo.NewDialogRepository(appDB)
-	restDialogRepository := rest.NewDialogRepository(dialogAPIClient)
+	dialogRepository := sqlxrepo.NewDialogRepository(appDB)
 
 	router := httprouter.New(httprouter.NewRegexRouteFactory())
 
@@ -141,12 +139,12 @@ func run() error {
 			}, "/friend/delete/{id}")
 
 			router.Post(`/dialog/{user_id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}/send`, &handler.SendDialog{
-				SqlxDialogRepository: sqlxDialogRepository,
-				RestDialogRepository: restDialogRepository,
+				DialogRepository:          dialogRepository,
+				MyfacebookDialogAPIClient: dialogAPIClient,
 			}, "/dialog/{user_id}/send")
 
 			router.Get(`/dialog/{user_id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}/list`, &handler.ListDialog{
-				DialogRepository: restDialogRepository,
+				DialogRepository: dialogRepository,
 			}, "/dialog/{user_id}/list")
 		})
 	})
@@ -164,6 +162,11 @@ func run() error {
 
 		router.Get(`/user/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`,
 			&internalapihandler.GetUser{UserRepository: userRepository}, "/int/user/{id}")
+
+		router.Post("/dialog/send", &internalapihandler.SendDialog{
+			DialogRepository: dialogRepository,
+			UserRepository:   userRepository,
+		}, "")
 	})
 
 	httpHandler := otelhttp.NewHandler(router, "")

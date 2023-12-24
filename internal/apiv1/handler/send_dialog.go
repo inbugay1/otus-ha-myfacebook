@@ -7,14 +7,14 @@ import (
 
 	"github.com/inbugay1/httprouter"
 	"myfacebook/internal/apiv1"
+	"myfacebook/internal/myfacebookdialogapiclient"
 	"myfacebook/internal/repository"
-	"myfacebook/internal/repository/rest"
 	sqlxrepo "myfacebook/internal/repository/sqlx"
 )
 
 type SendDialog struct {
-	SqlxDialogRepository *sqlxrepo.DialogRepository
-	RestDialogRepository *rest.DialogRepository
+	DialogRepository          *sqlxrepo.DialogRepository
+	MyfacebookDialogAPIClient *myfacebookdialogapiclient.Client
 }
 
 type sendDialogRequest struct {
@@ -36,7 +36,7 @@ func (h *SendDialog) Handle(responseWriter http.ResponseWriter, request *http.Re
 	ctx := request.Context()
 
 	senderID := ctx.Value("user_id").(string)
-	receiverID := httprouter.RouteParam(ctx, "user_id")
+	receiverID := httprouter.RouteParam(ctx, "user_id") // todo validate
 
 	dialogMsg := repository.DialogMessage{
 		From: senderID,
@@ -44,12 +44,12 @@ func (h *SendDialog) Handle(responseWriter http.ResponseWriter, request *http.Re
 		Text: sendDialogReq.Text,
 	}
 
-	err := h.RestDialogRepository.Add(ctx, dialogMsg)
+	err := h.MyfacebookDialogAPIClient.SendDialogMessage(ctx, dialogMsg.From, dialogMsg.To, dialogMsg.Text)
 	if err != nil {
-		return apiv1.NewServerError(fmt.Errorf("send dialog handler failed to add dialog message to rest repository: %w", err))
+		return apiv1.NewServerError(fmt.Errorf("send dialog handler, failed to send dialog message via dialog api client: %w", err))
 	}
 
-	err = h.SqlxDialogRepository.Add(ctx, dialogMsg)
+	err = h.DialogRepository.Add(ctx, dialogMsg)
 	if err != nil {
 		return apiv1.NewServerError(fmt.Errorf("send dialog handler failed to add dialog message to sqlx repository: %w", err))
 	}

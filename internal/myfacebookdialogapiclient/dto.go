@@ -1,4 +1,4 @@
-package dialogapiclient
+package myfacebookdialogapiclient
 
 type DialogMessage struct {
 	ID   string `json:"id"`
