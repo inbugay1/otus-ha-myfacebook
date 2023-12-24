@@ -114,6 +114,7 @@ func run() error {
 		router.Use(apiv1ErrorResponseMiddleware, apiv1ErrorLogMiddleware)
 
 		router.Post("/user/register", &handler.Register{UserRepository: userRepository}, "")
+
 		router.Get(`/user/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`,
 			&handler.GetUser{UserRepository: userRepository}, "/user/{id}")
 
@@ -154,10 +155,15 @@ func run() error {
 	internalAPIErrorLogMiddleware := internalapimiddleware.NewErrorLog()
 
 	router.Group(func(router httprouter.Router) {
+		router.WithPrefix("int") // add /int prefix to all group routes
+
 		router.Use(internalAPIErrorResponseMiddleware, internalAPIErrorLogMiddleware)
 
-		router.Get(`/int/user/findByToken/{token:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`,
+		router.Get(`/user/findByToken/{token:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`,
 			&internalapihandler.FindUserByToken{UserRepository: userRepository}, "/int/user/findByToken/{token}")
+
+		router.Get(`/user/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`,
+			&internalapihandler.GetUser{UserRepository: userRepository}, "/int/user/{id}")
 	})
 
 	httpHandler := otelhttp.NewHandler(router, "")
