@@ -12,17 +12,41 @@ services:
       - POSTGRES_DB=${DB_NAME}
       - POSTGRES_USER=${DB_USERNAME}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
+    networks:
+      - myfacebook
+
+  myfacebook_jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: myfacebook_jaeger
+    restart: unless-stopped
+    ports:
+      - "16688:16686"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - myfacebook
 
   myfacebook:
     build:
       context: .
       dockerfile: ./Dockerfile
+    container_name: myfacebook
     depends_on:
       - myfacebook_postgres
     restart: on-failure
     environment:
       - DB_HOST=myfacebook_postgres
+      - MYFACEBOOK_DIALOG_API_BASE_URL=http://myfacebook_dialog:9091
+      - OTEL_EXPORTER_TYPE=otel_http
+      - OTEL_EXPORTER_OTLP_ENDPOINT=myfacebook_jaeger:4318
     ports:
       - ${HTTP_EXT_PORT}:${HTTP_INT_PORT}
     env_file:
       - ./.env
+    networks:
+      - myfacebook
+
+networks:
+  myfacebook:
+    driver: bridge
+    external: true
