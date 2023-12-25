@@ -7,14 +7,11 @@ import (
 
 	"github.com/inbugay1/httprouter"
 	"myfacebook/internal/apiv1"
-	"myfacebook/internal/myfacebookdialogapiclient"
 	"myfacebook/internal/repository"
-	sqlxrepo "myfacebook/internal/repository/sqlx"
 )
 
 type SendDialog struct {
-	DialogRepository          *sqlxrepo.DialogRepository
-	MyfacebookDialogAPIClient *myfacebookdialogapiclient.Client
+	DialogRepository repository.DialogRepository
 }
 
 type sendDialogRequest struct {
@@ -44,14 +41,9 @@ func (h *SendDialog) Handle(responseWriter http.ResponseWriter, request *http.Re
 		Text: sendDialogReq.Text,
 	}
 
-	err := h.MyfacebookDialogAPIClient.SendDialogMessage(ctx, dialogMsg.From, dialogMsg.To, dialogMsg.Text)
+	err := h.DialogRepository.Add(ctx, dialogMsg)
 	if err != nil {
-		return apiv1.NewServerError(fmt.Errorf("send dialog handler, failed to send dialog message via dialog api client: %w", err))
-	}
-
-	err = h.DialogRepository.Add(ctx, dialogMsg)
-	if err != nil {
-		return apiv1.NewServerError(fmt.Errorf("send dialog handler failed to add dialog message to sqlx repository: %w", err))
+		return apiv1.NewServerError(fmt.Errorf("send dialog handler failed to add dialog message to repository: %w", err))
 	}
 
 	responseWriter.Header().Set("Content-Type", "application/json; utf-8")

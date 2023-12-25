@@ -30,6 +30,7 @@ import (
 	internalapihandler "myfacebook/internal/internalapi/handler"
 	internalapimiddleware "myfacebook/internal/internalapi/middleware"
 	"myfacebook/internal/myfacebookdialogapiclient"
+	"myfacebook/internal/repository/rest"
 	sqlxrepo "myfacebook/internal/repository/sqlx"
 )
 
@@ -90,10 +91,10 @@ func run() error {
 		InsecureSkipVerify: true,
 	})
 	apiClient := apiclient.New(envConfig.MyfacebookDialogAPIBaseURL, httpClient)
-	dialogAPIClient := myfacebookdialogapiclient.New(apiClient)
+	myfacebookDialogAPIClient := myfacebookdialogapiclient.New(apiClient)
 
 	userRepository := sqlxrepo.NewUserRepository(appDB)
-	dialogRepository := sqlxrepo.NewDialogRepository(appDB)
+	dialogRepository := rest.NewDialogRepository(myfacebookDialogAPIClient)
 
 	router := httprouter.New(httprouter.NewRegexRouteFactory())
 
@@ -139,8 +140,7 @@ func run() error {
 			}, "/friend/delete/{id}")
 
 			router.Post(`/dialog/{user_id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}/send`, &handler.SendDialog{
-				DialogRepository:          dialogRepository,
-				MyfacebookDialogAPIClient: dialogAPIClient,
+				DialogRepository: dialogRepository,
 			}, "/dialog/{user_id}/send")
 
 			router.Get(`/dialog/{user_id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}/list`, &handler.ListDialog{
@@ -162,11 +162,6 @@ func run() error {
 
 		router.Get(`/user/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`,
 			&internalapihandler.GetUser{UserRepository: userRepository}, "/int/user/{id}")
-
-		router.Post("/dialog/send", &internalapihandler.SendDialog{
-			DialogRepository: dialogRepository,
-			UserRepository:   userRepository,
-		}, "")
 	})
 
 	httpHandler := otelhttp.NewHandler(router, "")
