@@ -20,7 +20,7 @@ type EnvConfig struct {
 	DBPort               int    `env:"DB_PORT" envDefault:"5432"`
 	DBUsername           string `env:"DB_USERNAME" envDefault:"postgres"`
 	DBPassword           string `env:"DB_PASSWORD" envDefault:"secret"`
-	DBName               string `env:"DB_NAME" envDefault:"postgres"`
+	DBName               string `env:"DB_NAME" envDefault:"myfacebook"`
 	DBSSLMode            string `env:"DB_SSL_MODE" envDefault:"disable"`
 	DBMaxOpenConnections int    `env:"DB_MAX_OPEN_CONNECTIONS" envDefault:"10"`
 
