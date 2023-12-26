@@ -9,14 +9,25 @@
 * REQUEST_HEADER_MAX_SIZE - максимальный размер header для входящих запросов. По умолчанию 10000 байт.
 * REQUEST_READ_HEADER_TIMEOUT_MILLISECONDS - максимальное время отпущенное клиенту на чтение header в мс. По умолчанию
   2000мс.
-* DB_HOST - Адрес хоста для подключения к БД. По умолчанию localhost
-* DB_PORT - Порт для подключения к БД. По умолчанию 5432
-* DB_USERNAME - Имя пользователя БД. По умолчанию postgres
-* DB_PASSWORD - Пароль к БД. По умолчанию secret
-* DB_NAME - Название БД. По умолчанию myfacebook
-* DB_DRIVER_NAME - Драйвер БД. По умолчанию postgres
-* DB_SSL_MODE - Режим работы ssl для postgres. По умолчанию disable
-* DB_MAX_OPEN_CONNECTIONS - Число максимально одновременно открытых подключений. По умолчанию: 10
+
+* WRITE_DB_HOST - Адрес хоста для подключения к write БД. По умолчанию localhost
+* WRITE_DB_PORT - Порт для подключения к write БД. По умолчанию 5432
+* WRITE_DB_USERNAME - Имя пользователя write БД. По умолчанию postgres
+* WRITE_DB_PASSWORD - Пароль к write БД. По умолчанию secret
+* WRITE_DB_NAME - Название write БД. По умолчанию myfacebook
+* WRITE_DB_DRIVER_NAME - Драйвер write БД. По умолчанию postgres
+* WRITE_DB_SSL_MODE - Режим работы ssl для postgres. По умолчанию disable
+* WRITE_DB_MAX_OPEN_CONNECTIONS - Число максимально одновременно открытых подключений к write БД. По умолчанию: 10
+
+* READ_DB_HOST - Адрес хоста для подключения к read БД. По умолчанию localhost
+* READ_DB_PORT - Порт для подключения к read БД. По умолчанию 5432
+* READ_DB_USERNAME - Имя пользователя read БД. По умолчанию postgres
+* READ_DB_PASSWORD - Пароль к read БД. По умолчанию secret
+* READ_DB_NAME - Название read БД. По умолчанию myfacebook
+* READ_DB_DRIVER_NAME - Драйвер read БД. По умолчанию postgres
+* READ_DB_SSL_MODE - Режим работы ssl для postgres. По умолчанию disable
+* READ_DB_MAX_OPEN_CONNECTIONS - Число максимально одновременно открытых подключений к read БД. По умолчанию: 10
+
 * MYFACEBOOK_DIALOG_API_BASE_URL - Адрес сервиса диалогов. По умолчанию localhost:9091
 * OTEL_EXPORTER_TYPE - Экспортер трассировок, доступны значения: otel_http,
   stdout. По умолчанию: stdout

@@ -17,7 +17,7 @@ type Config struct {
 	DriverName         string
 	Host               string
 	Port               int
-	User               string
+	Username           string
 	Password           string
 	DBName             string
 	SSLMode            string
@@ -37,10 +37,7 @@ func New(config Config) *DB {
 }
 
 func (db *DB) Connect(ctx context.Context) error {
-	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-		db.config.Host, db.config.Port, db.config.User, db.config.Password, db.config.DBName, db.config.SSLMode)
-
-	conn, err := sqlx.ConnectContext(ctx, db.config.DriverName, dsn)
+	conn, err := sqlx.ConnectContext(ctx, db.config.DriverName, db.GetDsn())
 	if err != nil {
 		return fmt.Errorf("failed to connect to database %q on %s:%d: %w", db.config.DBName, db.config.Host, db.config.Port, err)
 	}
@@ -92,4 +89,9 @@ func (db *DB) Disconnect() error {
 
 func (db *DB) GetConnection() *sqlx.DB {
 	return db.conn
+}
+
+func (db *DB) GetDsn() string {
+	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+		db.config.Host, db.config.Port, db.config.Username, db.config.Password, db.config.DBName, db.config.SSLMode)
 }

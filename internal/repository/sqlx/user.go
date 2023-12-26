@@ -11,31 +11,33 @@ import (
 )
 
 type UserRepository struct {
-	db *db.DB
+	writeDB *db.DB
+	readDB  *db.DB
 }
 
-func NewUserRepository(db *db.DB) *UserRepository {
+func NewUserRepository(writeDB *db.DB, readDB *db.DB) *UserRepository {
 	return &UserRepository{
-		db: db,
+		writeDB: writeDB,
+		readDB:  readDB,
 	}
 }
 
 func (r *UserRepository) Add(ctx context.Context, user repository.User) error {
-	dbConn := r.db.GetConnection()
+	dbConn := r.writeDB.GetConnection()
 
 	sqlQuery := `INSERT INTO users (id, first_name, last_name, birthdate, biography, city, password) 
 				VALUES (:id, :first_name, :last_name, :birthdate, :biography, :city, :password)`
 
 	_, err := dbConn.NamedExecContext(ctx, sqlQuery, user)
 	if err != nil {
-		return fmt.Errorf("failed to add user to db: %w", err)
+		return fmt.Errorf("failed to add user to writeDB: %w", err)
 	}
 
 	return nil
 }
 
 func (r *UserRepository) GetUserByID(ctx context.Context, userID string) (*repository.User, error) {
-	dbConn := r.db.GetConnection()
+	dbConn := r.readDB.GetConnection()
 
 	var user repository.User
 
@@ -54,7 +56,7 @@ func (r *UserRepository) GetUserByID(ctx context.Context, userID string) (*repos
 }
 
 func (r *UserRepository) GetUsersByFirstnameAndLastname(ctx context.Context, firstName, lastName string) ([]repository.User, error) {
-	dbConn := r.db.GetConnection()
+	dbConn := r.readDB.GetConnection()
 
 	var users []repository.User
 
@@ -74,20 +76,20 @@ func (r *UserRepository) GetUsersByFirstnameAndLastname(ctx context.Context, fir
 }
 
 func (r *UserRepository) UpdateUserToken(ctx context.Context, userID, token string) error {
-	dbConn := r.db.GetConnection()
+	dbConn := r.writeDB.GetConnection()
 
 	sqlQuery := `UPDATE users SET token=$2 WHERE id=$1`
 
 	_, err := dbConn.ExecContext(ctx, sqlQuery, userID, token)
 	if err != nil {
-		return fmt.Errorf("failed to update user token in db: %w", err)
+		return fmt.Errorf("failed to update user token in writeDB: %w", err)
 	}
 
 	return nil
 }
 
 func (r *UserRepository) SetUserFriend(ctx context.Context, userID, friendID string) error {
-	dbConn := r.db.GetConnection()
+	dbConn := r.writeDB.GetConnection()
 
 	sqlQuery := `UPDATE users SET friend_id=$2 WHERE id=$1`
 
@@ -100,7 +102,7 @@ func (r *UserRepository) SetUserFriend(ctx context.Context, userID, friendID str
 }
 
 func (r *UserRepository) GetUserByToken(ctx context.Context, token string) (*repository.User, error) {
-	dbConn := r.db.GetConnection()
+	dbConn := r.readDB.GetConnection()
 
 	var user repository.User
 

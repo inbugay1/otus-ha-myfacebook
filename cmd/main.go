@@ -61,31 +61,56 @@ func run() error {
 		}
 	}()
 
-	appDB := db.New(db.Config{
-		DriverName:         envConfig.DBDriverName,
-		Host:               envConfig.DBHost,
-		Port:               envConfig.DBPort,
-		User:               envConfig.DBUsername,
-		Password:           envConfig.DBPassword,
-		DBName:             envConfig.DBName,
-		SSLMode:            envConfig.DBSSLMode,
-		MaxOpenConnections: envConfig.DBMaxOpenConnections,
+	writeDB := db.New(db.Config{
+		DriverName:         envConfig.WriteDBDriverName,
+		Host:               envConfig.WriteDBHost,
+		Port:               envConfig.WriteDBPort,
+		Username:           envConfig.WriteDBUsername,
+		Password:           envConfig.WriteDBPassword,
+		DBName:             envConfig.WriteDBName,
+		SSLMode:            envConfig.WriteDBSSLMode,
+		MaxOpenConnections: envConfig.WriteDBMaxOpenConnections,
 		MigrationPath:      "./storage/migrations",
 	})
 
-	if err := appDB.Connect(ctx); err != nil {
-		return fmt.Errorf("cannot connect to appDB: %w", err)
+	if err := writeDB.Connect(ctx); err != nil {
+		return fmt.Errorf("cannot connect to write db: %w", err)
 	}
 
+	slog.Info(fmt.Sprintf("Successfully connected to write db: %s", writeDB.GetDsn()))
+
 	defer func() {
-		if err := appDB.Disconnect(); err != nil {
-			log.Fatalf("Failed to disconnect from app db: %s", err)
+		if err := writeDB.Disconnect(); err != nil {
+			log.Fatalf("Failed to disconnect from write db: %s", err)
 		}
 	}()
 
-	if err := appDB.Migrate(); err != nil {
-		return fmt.Errorf("appDB migration failed: %w", err)
+	if err := writeDB.Migrate(); err != nil {
+		return fmt.Errorf("writeDB migration failed: %w", err)
 	}
+
+	readDB := db.New(db.Config{
+		DriverName:         envConfig.ReadDBDriverName,
+		Host:               envConfig.ReadDBHost,
+		Port:               envConfig.ReadDBPort,
+		Username:           envConfig.ReadDBUsername,
+		Password:           envConfig.ReadDBPassword,
+		DBName:             envConfig.ReadDBName,
+		SSLMode:            envConfig.ReadDBSSLMode,
+		MaxOpenConnections: envConfig.ReadDBMaxOpenConnections,
+	})
+
+	if err := readDB.Connect(ctx); err != nil {
+		return fmt.Errorf("cannot connect to read db: %w", err)
+	}
+
+	slog.Info(fmt.Sprintf("Successfully connected to read db: %s", readDB.GetDsn()))
+
+	defer func() {
+		if err := readDB.Disconnect(); err != nil {
+			log.Fatalf("Failed to disconnect from read db: %s", err)
+		}
+	}()
 
 	httpClient := httpclient.New(&httpclient.Config{
 		InsecureSkipVerify: true,
@@ -93,7 +118,7 @@ func run() error {
 	apiClient := apiclient.New(envConfig.MyfacebookDialogAPIBaseURL, httpClient)
 	myfacebookDialogAPIClient := myfacebookdialogapiclient.New(apiClient)
 
-	userRepository := sqlxrepo.NewUserRepository(appDB)
+	userRepository := sqlxrepo.NewUserRepository(writeDB, readDB)
 	dialogRepository := rest.NewDialogRepository(myfacebookDialogAPIClient)
 
 	router := httprouter.New(httprouter.NewRegexRouteFactory())

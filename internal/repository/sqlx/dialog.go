@@ -28,7 +28,7 @@ func (r *DialogRepository) Add(ctx context.Context, dialogMessage repository.Dia
 
 	_, err := dbConn.NamedExecContext(ctx, sqlQuery, dialogMessage)
 	if err != nil {
-		return fmt.Errorf("failed to add dialog mesage to db: %w", err)
+		return fmt.Errorf("failed to add dialog mesage to writeDB: %w", err)
 	}
 
 	return nil

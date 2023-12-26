@@ -15,14 +15,23 @@ type EnvConfig struct {
 	RequestHeaderMaxSize                 int `env:"REQUEST_HEADER_MAX_SIZE" envDefault:"10000"`
 	RequestReadHeaderTimeoutMilliseconds int `env:"REQUEST_READ_HEADER_TIMEOUT_MILLISECONDS" envDefault:"2000"`
 
-	DBDriverName         string `env:"DB_DRIVER_NAME" envDefault:"postgres"`
-	DBHost               string `env:"DB_HOST" envDefault:"localhost"`
-	DBPort               int    `env:"DB_PORT" envDefault:"5432"`
-	DBUsername           string `env:"DB_USERNAME" envDefault:"postgres"`
-	DBPassword           string `env:"DB_PASSWORD" envDefault:"secret"`
-	DBName               string `env:"DB_NAME" envDefault:"myfacebook"`
-	DBSSLMode            string `env:"DB_SSL_MODE" envDefault:"disable"`
-	DBMaxOpenConnections int    `env:"DB_MAX_OPEN_CONNECTIONS" envDefault:"10"`
+	WriteDBDriverName         string `env:"WRITE_DB_DRIVER_NAME" envDefault:"postgres"`
+	WriteDBHost               string `env:"WRITE_DB_HOST" envDefault:"localhost"`
+	WriteDBPort               int    `env:"WRITE_DB_PORT" envDefault:"5432"`
+	WriteDBUsername           string `env:"WRITE_DB_USERNAME" envDefault:"postgres"`
+	WriteDBPassword           string `env:"WRITE_DB_PASSWORD" envDefault:"secret"`
+	WriteDBName               string `env:"WRITE_DB_NAME" envDefault:"myfacebook"`
+	WriteDBSSLMode            string `env:"WRITE_DB_SSL_MODE" envDefault:"disable"`
+	WriteDBMaxOpenConnections int    `env:"WRITE_DB_MAX_OPEN_CONNECTIONS" envDefault:"10"`
+
+	ReadDBDriverName         string `env:"READ_DB_DRIVER_NAME" envDefault:"postgres"`
+	ReadDBHost               string `env:"READ_DB_HOST" envDefault:"localhost"`
+	ReadDBPort               int    `env:"READ_DB_PORT" envDefault:"5432"`
+	ReadDBUsername           string `env:"READ_DB_USERNAME" envDefault:"postgres"`
+	ReadDBPassword           string `env:"READ_DB_PASSWORD" envDefault:"secret"`
+	ReadDBName               string `env:"READ_DB_NAME" envDefault:"myfacebook"`
+	ReadDBSSLMode            string `env:"READ_DB_SSL_MODE" envDefault:"disable"`
+	ReadDBMaxOpenConnections int    `env:"READ_DB_MAX_OPEN_CONNECTIONS" envDefault:"10"`
 
 	MyfacebookDialogAPIBaseURL string `env:"MYFACEBOOK_DIALOG_API_BASE_URL" envDefault:"http://localhost:9091"`
 
