@@ -35,7 +35,6 @@ services:
       - myfacebook_postgres
     restart: on-failure
     environment:
-      - DB_HOST=myfacebook_postgres
       - MYFACEBOOK_DIALOG_API_BASE_URL=http://myfacebook_dialog:9091
       - OTEL_EXPORTER_TYPE=otel_http
       - OTEL_EXPORTER_OTLP_ENDPOINT=myfacebook_jaeger:4318

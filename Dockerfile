@@ -12,4 +12,4 @@ COPY --from=builder /app/bin ./bin
 COPY --from=builder /app/storage ./storage
 
 CMD ["./bin/app"]
-EXPOSE 9090/tcp
+EXPOSE 9092/tcp

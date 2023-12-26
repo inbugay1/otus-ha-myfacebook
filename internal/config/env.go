@@ -10,7 +10,7 @@ type EnvConfig struct {
 	Version     string `env:"VERSION" envDefault:"version_not_set"`
 	ServiceName string `env:"SERVICE_NAME" envDefault:"myfacebook"`
 	LogLevel    string `env:"LOG_LEVEL" envDefault:"info"`
-	HTTPPort    string `env:"HTTP_INT_PORT" envDefault:"9090"`
+	HTTPPort    string `env:"HTTP_INT_PORT" envDefault:"9092"`
 
 	RequestHeaderMaxSize                 int `env:"REQUEST_HEADER_MAX_SIZE" envDefault:"10000"`
 	RequestReadHeaderTimeoutMilliseconds int `env:"REQUEST_READ_HEADER_TIMEOUT_MILLISECONDS" envDefault:"2000"`
