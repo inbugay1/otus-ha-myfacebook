@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"errors"
 	"fmt"
+	"myfacebook/internal/postfeedcache"
 	"net/http"
 
 	"github.com/inbugay1/httprouter"
@@ -12,6 +12,8 @@ import (
 
 type DeleteFriend struct {
 	UserRepository repository.UserRepository
+	PostRepository repository.PostRepository
+	PostFeedCache  *postfeedcache.Cache
 }
 
 func (h *DeleteFriend) Handle(responseWriter http.ResponseWriter, request *http.Request) error {
@@ -21,22 +23,30 @@ func (h *DeleteFriend) Handle(responseWriter http.ResponseWriter, request *http.
 
 	friendID := httprouter.RouteParam(ctx, "id")
 
-	user, err := h.UserRepository.GetUserByID(ctx, userID)
+	err := h.UserRepository.DeleteFriend(ctx, userID, friendID)
 	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
-			return apiv1.NewEntityNotFoundError(err)
+		return apiv1.NewServerError(fmt.Errorf("delete friend handler, failed to delete friend: %w", err))
+	}
+
+	postsIDs, err := h.PostFeedCache.GetPostsIDs(ctx, userID)
+	if err != nil {
+		return apiv1.NewServerError(fmt.Errorf("delete friend handler, failed to get posts ids from post feed: %w", err))
+	}
+
+	if len(postsIDs) > 0 {
+		posts, err := h.PostRepository.GetPostsByIDs(ctx, postsIDs, 0, 1000)
+		if err != nil {
+			return apiv1.NewServerError(fmt.Errorf("delete friend handler, failed to get posts by ids from repo: %w", err))
 		}
 
-		return apiv1.NewServerError(fmt.Errorf("delete friend handler, failed to get user by id: %w", err))
-	}
-
-	if user.FriendID != friendID {
-		return apiv1.NewInvalidRequestError("invalid friend id", nil)
-	}
-
-	err = h.UserRepository.SetUserFriend(ctx, userID, "")
-	if err != nil {
-		return apiv1.NewServerError(fmt.Errorf("delete friend handler, failed to set user friend: %w", err))
+		for _, post := range posts {
+			if post.AuthorID == friendID {
+				err := h.PostFeedCache.RemovePostID(ctx, userID, post.ID)
+				if err != nil {
+					return apiv1.NewServerError(fmt.Errorf("delete friend handler, failed to remove post from post feed: %w", err))
+				}
+			}
+		}
 	}
 
 	responseWriter.Header().Set("Content-Type", "application/json; utf-8")

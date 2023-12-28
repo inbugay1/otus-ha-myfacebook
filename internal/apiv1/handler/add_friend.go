@@ -9,20 +9,20 @@ import (
 	"myfacebook/internal/repository"
 )
 
-type SetFriend struct {
+type AddFriend struct {
 	UserRepository repository.UserRepository
 }
 
-func (h *SetFriend) Handle(responseWriter http.ResponseWriter, request *http.Request) error {
+func (h *AddFriend) Handle(responseWriter http.ResponseWriter, request *http.Request) error {
 	ctx := request.Context()
 
 	userID := ctx.Value("user_id").(string)
 
 	friendID := httprouter.RouteParam(ctx, "id")
 
-	err := h.UserRepository.SetUserFriend(ctx, userID, friendID)
+	err := h.UserRepository.AddFriend(ctx, userID, friendID)
 	if err != nil {
-		return apiv1.NewServerError(fmt.Errorf("set friend handler, failed to set user friend: %w", err))
+		return apiv1.NewServerError(fmt.Errorf("add friend handler, failed to add friend: %w", err))
 	}
 
 	responseWriter.Header().Set("Content-Type", "application/json; utf-8")

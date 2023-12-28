@@ -37,6 +37,19 @@ type EnvConfig struct {
 
 	OTelExporterType         string `env:"OTEL_EXPORTER_TYPE" envDefault:"stdout"`
 	OTelExporterOTLPEndpoint string `env:"OTEL_EXPORTER_OTLP_ENDPOINT" envDefault:"localhost:4318"`
+
+	RMQHost     string `env:"RMQ_HOST" envDefault:"localhost"`
+	RMQPort     string `env:"RMQ_PORT" envDefault:"5672"`
+	RMQUsername string `env:"RMQ_USERNAME" envDefault:"guest"`
+	RMQPassword string `env:"RMQ_PASSWORD" envDefault:"guest"`
+
+	RedisHost     string `env:"REDIS_HOST" envDefault:"localhost"`
+	RedisPort     string `env:"REDIS_PORT" envDefault:"6379"`
+	RedisDBNum    int    `env:"REDIS_DB_NUM" envDefault:"0"`
+	RedisPassword string `env:"REDIS_PASSWORD" envDefault:""`
+
+	PopularFriendUsersCount                   int `env:"POPULAR_FRIEND_USERS_COUNT" envDefault:"100"`
+	PopularFriendPostsRetrieveIntervalMinutes int `env:"POPULAR_FRIEND_POSTS_RETRIEVE_INTERVAL_MINUTES" envDefault:"5"`
 }
 
 func GetConfigFromEnv() *EnvConfig {

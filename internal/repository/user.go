@@ -11,7 +11,6 @@ type User struct {
 	City      string `db:"city"`
 	Password  string `db:"password"`
 	Token     string `db:"token"`
-	FriendID  string `db:"friend_id"`
 }
 
 type UserRepository interface {
@@ -20,5 +19,9 @@ type UserRepository interface {
 	GetUsersByFirstnameAndLastname(ctx context.Context, firstName, lastName string) ([]User, error)
 	UpdateUserToken(ctx context.Context, userID, token string) error
 	GetUserByToken(ctx context.Context, token string) (*User, error)
-	SetUserFriend(ctx context.Context, userID, friendID string) error
+	AddFriend(ctx context.Context, userID, friendID string) error
+	DeleteFriend(ctx context.Context, userID, friendID string) error
+	GetUsersIDsByFriendID(ctx context.Context, friendID string) ([]string, error)
+	GetPopularFriendsIDsByUserID(ctx context.Context, userID string, popularFriendUsersCount int) ([]string, error)
+	GetUsersCountByFriendID(ctx context.Context, friendID string) (int, error)
 }

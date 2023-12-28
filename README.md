@@ -33,6 +33,16 @@
   stdout. По умолчанию: stdout
 * OTEL_EXPORTER_OTLP_ENDPOINT - адрес коллектора, работающего по протоколу OTLP over http. По умолчанию: localhost:4318
 
+* RMQ_HOST - Хост для подключения к RabbitMQ. По умолчанию: localhost
+* RMQ_HOST_PORT - Порт для подключения к RabbitMQ. По умолчанию: 5672
+* RMQ_USERNAME - Имя пользователя. По умолчанию: guest
+* RMQ_PASSWORD - Пароль. По умолчанию: guest
+
+* REDIS_HOST - Хост для подключения к Redis. По умолчанию: localhost
+* REDIS_PORT - Хост для подключения к Redis. По умолчанию: 6379
+* REDIS_PASSWORD - Пароль. По умолчанию отсутствует
+* REDIS_DB_NUM - Номер БД. По умолчанию: 0
+
 ## Локальный запуск приложения
 
 Для запуска приложения необходим установленный docker

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -30,8 +31,12 @@ import (
 	internalapihandler "myfacebook/internal/internalapi/handler"
 	internalapimiddleware "myfacebook/internal/internalapi/middleware"
 	"myfacebook/internal/myfacebookdialogapiclient"
+	"myfacebook/internal/postfanoutservice"
+	"myfacebook/internal/postfeedcache"
+	"myfacebook/internal/rdb"
 	"myfacebook/internal/repository/rest"
 	sqlxrepo "myfacebook/internal/repository/sqlx"
+	"myfacebook/internal/rmq"
 )
 
 func main() {
@@ -112,6 +117,25 @@ func run() error {
 		}
 	}()
 
+	rabbitMQ := rmq.New(&rmq.Config{
+		Host:     envConfig.RMQHost,
+		Port:     envConfig.RMQPort,
+		Username: envConfig.RMQUsername,
+		Password: envConfig.RMQPassword,
+	})
+
+	if err := rabbitMQ.Connect(); err != nil {
+		return fmt.Errorf("cannot connect to rmq: %w", err)
+	}
+
+	slog.Info(fmt.Sprintf("Successfully connected to rmq on %s", net.JoinHostPort(envConfig.RMQHost, envConfig.RMQPort)))
+
+	defer func() {
+		if err := rabbitMQ.Disconnect(); err != nil {
+			log.Fatalf("Failed to disconnect from rmq: %s", err)
+		}
+	}()
+
 	httpClient := httpclient.New(&httpclient.Config{
 		InsecureSkipVerify: true,
 	})
@@ -119,7 +143,36 @@ func run() error {
 	myfacebookDialogAPIClient := myfacebookdialogapiclient.New(apiClient)
 
 	userRepository := sqlxrepo.NewUserRepository(writeDB, readDB)
+	postRepository := sqlxrepo.NewPostRepository(writeDB, readDB)
 	dialogRepository := rest.NewDialogRepository(myfacebookDialogAPIClient)
+
+	redisDB := rdb.New(&rdb.Config{
+		Host:     envConfig.RedisHost,
+		Port:     envConfig.RedisPort,
+		Password: envConfig.RedisPassword,
+		DBNum:    envConfig.RedisDBNum,
+	})
+
+	if err := redisDB.Connect(ctx); err != nil {
+		return fmt.Errorf("failed to connect to redis: %w", err)
+	}
+
+	defer func() {
+		if err := redisDB.Disconnect(); err != nil {
+			log.Fatalf("Failed to disconnect from redis: %s", err)
+		}
+	}()
+
+	postFeedCache := postfeedcache.New(redisDB)
+
+	postFanoutService := postfanoutservice.New(rabbitMQ, userRepository, postFeedCache, envConfig)
+
+	err = postFanoutService.Start(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to start post fanout service, %w", err)
+	}
+
+	defer postFanoutService.Stop()
 
 	router := httprouter.New(httprouter.NewRegexRouteFactory())
 
@@ -156,13 +209,40 @@ func run() error {
 		router.Group(func(router httprouter.Router) {
 			router.Use(apiv1AuthMiddleware)
 
-			router.Put(`/friend/set/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`, &handler.SetFriend{
+			router.Put(`/friend/add/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`, &handler.AddFriend{
 				UserRepository: userRepository,
-			}, "/friend/set/{id}")
+			}, "/friend/add/{id}")
 
 			router.Put(`/friend/delete/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}`, &handler.DeleteFriend{
 				UserRepository: userRepository,
+				PostRepository: postRepository,
+				PostFeedCache:  postFeedCache,
 			}, "/friend/delete/{id}")
+
+			router.Get("/post/get/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}", &handler.GetPost{
+				PostRepository: postRepository,
+			}, "/post/get/{id}")
+
+			router.Post("/post/create", &handler.CreatePost{
+				PostRepository: postRepository,
+				RMQ:            rabbitMQ,
+			}, "/post/create")
+
+			router.Put("/post/update", &handler.UpdatePost{
+				PostRepository: postRepository,
+			}, "/post/update")
+
+			router.Put("/post/delete/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}", &handler.DeletePost{
+				PostRepository: postRepository,
+				RMQ:            rabbitMQ,
+			}, "/post/delete/{id}")
+
+			router.Get("/post/feed", &handler.PostFeed{
+				PostRepository: postRepository,
+				UserRepository: userRepository,
+				PostFeedCache:  postFeedCache,
+				EnvConfig:      envConfig,
+			}, "/post/feed")
 
 			router.Post(`/dialog/{user_id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}/send`, &handler.SendDialog{
 				DialogRepository: dialogRepository,

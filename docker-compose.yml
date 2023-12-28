@@ -26,6 +26,25 @@ services:
     networks:
       - myfacebook
 
+  myfacebook_rabbitmq:
+    image: rabbitmq:3.8.19-management-alpine
+    container_name: myfacebook_rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    networks:
+      - myfacebook
+
+  myfacebook_redis:
+    image: redis:6.2
+    container_name: myfacebook_redis
+    networks:
+      - myfacebook
+
   myfacebook:
     build:
       context: .
@@ -41,7 +60,7 @@ services:
     ports:
       - ${HTTP_EXT_PORT}:${HTTP_INT_PORT}
     env_file:
-      - ./.env
+      - .env
     networks:
       - myfacebook
 

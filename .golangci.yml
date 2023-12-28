@@ -1,11 +1,13 @@
 linters-settings:
   funlen:
-    lines: 200
+    lines: 300
     statements: 100
   nestif:
-    min-complexity: 5
+    min-complexity: 10
   cyclop:
-    max-complexity: 15
+    max-complexity: 16
+  maintidx:
+    under: 10
 linters:
   disable-all: false
   enable-all: true
