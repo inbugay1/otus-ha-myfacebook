@@ -48,6 +48,10 @@ type EnvConfig struct {
 	RedisDBNum    int    `env:"REDIS_DB_NUM" envDefault:"0"`
 	RedisPassword string `env:"REDIS_PASSWORD" envDefault:""`
 
+	ConnectionWatcherPingIntervalSeconds     int `env:"CONNECTION_WATCHER_PING_INTERVAL_SECONDS" envDefault:"5"`
+	ConnectionWatcherPingTimeoutSeconds      int `env:"CONNECTION_WATCHER_PING_TIMEOUT_SECONDS" envDefault:"2"`
+	ConnectionWatcherReconnectTimeoutSeconds int `env:"CONNECTION_WATCHER_RECONNECT_TIMEOUT_SECONDS" envDefault:"2"`
+
 	PopularFriendUsersCount                   int `env:"POPULAR_FRIEND_USERS_COUNT" envDefault:"100"`
 	PopularFriendPostsRetrieveIntervalMinutes int `env:"POPULAR_FRIEND_POSTS_RETRIEVE_INTERVAL_MINUTES" envDefault:"5"`
 }

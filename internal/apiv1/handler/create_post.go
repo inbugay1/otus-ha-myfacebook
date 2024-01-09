@@ -27,9 +27,10 @@ type postResponse struct {
 	ID string `json:"id"`
 }
 
-type postMessage struct {
+type postFeedRMQMessage struct {
 	Operation string `json:"operation"`
 	PostID    string `json:"post_id"`
+	PostText  string `json:"post_text,omitempty"`
 	AuthorID  string `json:"author_id"`
 }
 
@@ -68,16 +69,17 @@ func (h *CreatePost) Handle(responseWriter http.ResponseWriter, request *http.Re
 		return apiv1.NewServerError(fmt.Errorf("create post handler, failed to add post: %w", err))
 	}
 
-	rmqMessage, err := json.Marshal(postMessage{
+	postFeedRMQMsg, err := json.Marshal(postFeedRMQMessage{
 		Operation: "add",
 		PostID:    post.ID,
+		PostText:  post.Text,
 		AuthorID:  authorID,
 	})
 	if err != nil {
 		return apiv1.NewServerError(fmt.Errorf("create post handler, failed to make rmq message: %w", err))
 	}
 
-	err = h.RMQ.Publish(ctx, "postfeed", rmqMessage)
+	err = h.RMQ.Publish(ctx, "", "/post/feed", postFeedRMQMsg)
 	if err != nil {
 		return apiv1.NewServerError(fmt.Errorf("create post handler, failed to publish rmq message: %w", err))
 	}

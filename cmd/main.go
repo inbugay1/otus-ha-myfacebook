@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/inbugay1/httprouter"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -23,6 +24,7 @@ import (
 	"myfacebook/internal/apiv1/handler"
 	apiv1middleware "myfacebook/internal/apiv1/middleware"
 	"myfacebook/internal/config"
+	"myfacebook/internal/connectionwatcher"
 	"myfacebook/internal/db"
 	"myfacebook/internal/httpclient"
 	"myfacebook/internal/httphandler"
@@ -122,9 +124,19 @@ func run() error {
 		Port:     envConfig.RMQPort,
 		Username: envConfig.RMQUsername,
 		Password: envConfig.RMQPassword,
+	}, []rmq.Exchange{
+		{
+			Name: "/post/feed/posted",
+			Kind: "direct",
+		},
+	}, []rmq.Queue{
+		{
+			Name:    "/post/feed",
+			Durable: true,
+		},
 	})
 
-	if err := rabbitMQ.Connect(); err != nil {
+	if err := rabbitMQ.Connect(ctx); err != nil {
 		return fmt.Errorf("cannot connect to rmq: %w", err)
 	}
 
@@ -135,6 +147,17 @@ func run() error {
 			log.Fatalf("Failed to disconnect from rmq: %s", err)
 		}
 	}()
+
+	connectionWatcher := connectionwatcher.New(&connectionwatcher.Config{
+		PingInterval:     time.Duration(envConfig.ConnectionWatcherPingIntervalSeconds) * time.Second,
+		PingTimeout:      time.Duration(envConfig.ConnectionWatcherPingTimeoutSeconds) * time.Second,
+		ReconnectTimeout: time.Duration(envConfig.ConnectionWatcherReconnectTimeoutSeconds) * time.Second,
+	})
+
+	connectionWatcher.AddService("rmq", rabbitMQ)
+
+	connectionWatcher.Start(ctx)
+	defer connectionWatcher.Stop()
 
 	httpClient := httpclient.New(&httpclient.Config{
 		InsecureSkipVerify: true,
