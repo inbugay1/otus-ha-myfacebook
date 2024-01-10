@@ -34,8 +34,8 @@ services:
       - "5673:5672"
       - "15673:15672"
     environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_DEFAULT_USER=${RMQ_USERNAME}
+      - RABBITMQ_DEFAULT_PASS=${RMQ_PASSWORD}
     networks:
       - myfacebook
 
@@ -57,6 +57,10 @@ services:
       - MYFACEBOOK_DIALOG_API_BASE_URL=http://myfacebook_dialog:9091
       - OTEL_EXPORTER_TYPE=otel_http
       - OTEL_EXPORTER_OTLP_ENDPOINT=myfacebook_jaeger:4318
+      - WRITE_DB_HOST=myfacebook_postgres
+      - READ_DB_HOST=myfacebook_postgres
+      - RMQ_HOST=myfacebook_rabbitmq
+      - REDIS_HOST=myfacebook_redis
     ports:
       - ${HTTP_EXT_PORT}:${HTTP_INT_PORT}
     env_file:
